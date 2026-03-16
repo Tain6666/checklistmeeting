@@ -4,23 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit - จัดการข้อมูล</title>
-    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
-    
     <style>
-        body {
-            font-family: 'Prompt', sans-serif;
-            background-color: #f4f7f6;
-        }
+        body { font-family: 'Prompt', sans-serif; background-color: #f4f7f6; }
         .navbar { box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .card {
-            border: none;
-            border-radius: 12px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-        }
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
         .form-control, .form-select { border-radius: 8px; }
         .btn { border-radius: 8px; font-weight: 500; }
+        .mode-toggle { cursor: pointer; }
     </style>
 </head>
 <body>
@@ -42,27 +34,42 @@
 </nav>
 
 <div class="container mt-4 mb-5">
-    <h3 class="mb-4 fw-bold text-secondary">⚙️ ตั้งค่าและเพิ่มข้อมูลระบบ</h3>
+    <h3 class="mb-4 fw-bold text-secondary">⚙️ จัดการข้อมูลห้องและอุปกรณ์</h3>
 
     <div class="row g-4">
         <div class="col-lg-5">
             <div class="card h-100">
-                <div class="card-header bg-white border-bottom py-3">
-                    <h5 class="mb-0 fw-bold text-primary">➕ เพิ่มห้องประชุมใหม่</h5>
+                <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold text-primary">🏢 ห้องประชุม</h5>
+                    <div>
+                        <input type="radio" class="btn-check" name="roomMode" id="roomAdd" value="add" checked onchange="toggleRoomMode()">
+                        <label class="btn btn-outline-primary btn-sm" for="roomAdd">เพิ่มใหม่</label>
+                        <input type="radio" class="btn-check" name="roomMode" id="roomEdit" value="edit" onchange="toggleRoomMode()">
+                        <label class="btn btn-outline-primary btn-sm" for="roomEdit">แก้ไขเดิม</label>
+                    </div>
                 </div>
                 <div class="card-body p-4">
-                    <form onsubmit="saveRoom(event)">
+                    <form onsubmit="submitRoom(event)">
+                        <div class="mb-3" id="roomSelectDiv" style="display:none;">
+                            <label class="form-label text-muted">เลือกห้องที่ต้องการแก้ไข</label>
+                            <select id="editRoomSelect" class="form-select bg-light" onchange="fillRoomData()">
+                                <option value="">-- เลือกห้อง --</option>
+                            </select>
+                        </div>
+
                         <div class="mb-3">
                             <label class="form-label text-muted">ชื่อห้องประชุม</label>
-                            <input type="text" id="roomName" class="form-control bg-light" required placeholder="เช่น ห้องประชุม 1">
+                            <input type="text" id="roomName" class="form-control bg-light" required>
+                            <input type="hidden" id="oldRoomName">
                         </div>
                         <div class="mb-3">
                             <label class="form-label text-muted">อาคาร</label>
-                            <input type="text" id="roomBuilding" class="form-control bg-light" required placeholder="เช่น อาคารหมอประสงค์ฯ">
+                            <input type="text" id="roomBuilding" class="form-control bg-light" required>
                         </div>
                         <div class="mb-4">
-                            <label class="form-label text-muted">ลิงก์ภาพห้องประชุม (URL)</label>
-                            <input type="url" id="roomImage" class="form-control bg-light" placeholder="https://...">
+                            <label class="form-label text-muted">ถ่ายรูป/อัปโหลดภาพห้อง</label>
+                            <input type="file" id="roomImageFile" accept="image/*" capture="environment" class="form-control bg-light">
+                            <small class="text-muted" id="roomImageHelp">เว้นว่างไว้หากไม่ต้องการเปลี่ยนรูป</small>
                         </div>
                         <button type="submit" class="btn btn-primary w-100 shadow-sm py-2" id="btnSaveRoom">บันทึกข้อมูลห้อง</button>
                     </form>
@@ -72,16 +79,29 @@
 
         <div class="col-lg-7">
             <div class="card h-100">
-                <div class="card-header bg-white border-bottom py-3">
-                    <h5 class="mb-0 fw-bold text-secondary">🖥️ เพิ่มอุปกรณ์เข้าห้องประชุม</h5>
+                <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold text-secondary">🖥️ อุปกรณ์</h5>
+                    <div>
+                        <input type="radio" class="btn-check" name="equipMode" id="equipAdd" value="add" checked onchange="toggleEquipMode()">
+                        <label class="btn btn-outline-secondary btn-sm" for="equipAdd">เพิ่มใหม่</label>
+                        <input type="radio" class="btn-check" name="equipMode" id="equipEdit" value="edit" onchange="toggleEquipMode()">
+                        <label class="btn btn-outline-secondary btn-sm" for="equipEdit">แก้ไขเดิม</label>
+                    </div>
                 </div>
                 <div class="card-body p-4">
-                    <form onsubmit="saveEquipment(event)">
+                    <form onsubmit="submitEquipment(event)">
+                        <div class="mb-3" id="equipSelectDiv" style="display:none;">
+                            <label class="form-label text-muted">เลือกอุปกรณ์ที่ต้องการแก้ไข (ค้นหาจากรหัส)</label>
+                            <select id="editEquipSelect" class="form-select bg-light" onchange="fillEquipData()">
+                                <option value="">-- เลือกอุปกรณ์ --</option>
+                            </select>
+                        </div>
+
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label class="form-label text-muted">เลือกห้องประชุม</label>
+                                <label class="form-label text-muted">ห้องประชุม</label>
                                 <select id="equipRoom" class="form-select bg-light" required>
-                                    <option value="">-- โหลดรายชื่อห้อง... --</option>
+                                    <option value="">-- เลือกห้อง --</option>
                                 </select>
                             </div>
                             <div class="col-md-6">
@@ -107,6 +127,7 @@
                             <div class="col-md-6">
                                 <label class="form-label text-muted">รหัสทรัพย์สิน</label>
                                 <input type="text" id="equipId" class="form-control bg-light" required>
+                                <input type="hidden" id="oldEquipId">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label text-muted">ยี่ห้อ / รุ่น</label>
@@ -121,8 +142,9 @@
                                 <input type="date" id="equipBuyDate" class="form-control bg-light">
                             </div>
                             <div class="col-12 mb-2">
-                                <label class="form-label text-muted">ลิงก์รูปอุปกรณ์ (URL)</label>
-                                <input type="url" id="equipImage" class="form-control bg-light" placeholder="https://...">
+                                <label class="form-label text-muted">ถ่ายรูป/อัปโหลดภาพอุปกรณ์</label>
+                                <input type="file" id="equipImageFile" accept="image/*" capture="environment" class="form-control bg-light">
+                                <small class="text-muted" id="equipImageHelp">เว้นว่างไว้หากไม่ต้องการเปลี่ยนรูป</small>
                             </div>
                         </div>
                         <button type="submit" class="btn btn-secondary w-100 shadow-sm py-2 mt-3" id="btnSaveEquip">บันทึกอุปกรณ์</button>
@@ -137,64 +159,167 @@
 <script>
     // ** ใส่ Web App URL ของคุณที่นี่ **
     const GAS_URL = "https://script.google.com/macros/s/AKfycbw3cng8MCNieY1EVNsvhEx2EB3Gccj8AZLbobzhs0vhPxbFFGTDoU-BFn_Be0mW95-2uA/exec"; 
+    
+    let allRooms = [];
+    let allEquip = [];
 
+    // โหลดข้อมูลตั้งต้น
     window.onload = async () => {
         try {
-            const res = await fetch(`${GAS_URL}?action=getRooms`);
-            const rooms = await res.json();
-            const select = document.getElementById('equipRoom');
-            select.innerHTML = '<option value="">-- กรุณาเลือกห้อง --</option>';
-            rooms.forEach(r => {
-                select.innerHTML += `<option value="${r.name}">${r.name} (${r.building})</option>`;
-            });
+            const [resRooms, resEquip] = await Promise.all([
+                fetch(`${GAS_URL}?action=getRooms`),
+                fetch(`${GAS_URL}?action=getAllEquipment`)
+            ]);
+            allRooms = await resRooms.json();
+            allEquip = await resEquip.json();
+            
+            updateDropdowns();
         } catch (error) {
-            console.error("Error loading rooms", error);
+            console.error("Error loading data", error);
         }
     };
 
-    async function saveRoom(e) {
+    function updateDropdowns() {
+        // อัปเดต Dropdown ห้อง
+        const roomSelects = [document.getElementById('equipRoom'), document.getElementById('editRoomSelect')];
+        roomSelects.forEach(sel => {
+            sel.innerHTML = '<option value="">-- เลือกห้อง --</option>';
+            allRooms.forEach(r => sel.innerHTML += `<option value="${r.name}">${r.name}</option>`);
+        });
+
+        // อัปเดต Dropdown อุปกรณ์
+        const equipSel = document.getElementById('editEquipSelect');
+        equipSel.innerHTML = '<option value="">-- เลือกอุปกรณ์ --</option>';
+        allEquip.forEach(eq => equipSel.innerHTML += `<option value="${eq.id}">[${eq.room}] ${eq.id} - ${eq.type}</option>`);
+    }
+
+    // แปลงไฟล์รูปเป็น Base64
+    const getBase64 = (file) => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+    });
+
+    // --- ส่วนจัดการหน้าจอ (UI Logic) ---
+    function toggleRoomMode() {
+        const mode = document.querySelector('input[name="roomMode"]:checked').value;
+        document.getElementById('roomSelectDiv').style.display = (mode === 'edit') ? 'block' : 'none';
+        if (mode === 'add') {
+            document.getElementById('roomName').value = '';
+            document.getElementById('roomBuilding').value = '';
+            document.getElementById('roomImageFile').value = '';
+        }
+    }
+
+    function fillRoomData() {
+        const selectedName = document.getElementById('editRoomSelect').value;
+        const room = allRooms.find(r => r.name === selectedName);
+        if (room) {
+            document.getElementById('oldRoomName').value = room.name;
+            document.getElementById('roomName').value = room.name;
+            document.getElementById('roomBuilding').value = room.building;
+        }
+    }
+
+    function toggleEquipMode() {
+        const mode = document.querySelector('input[name="equipMode"]:checked').value;
+        document.getElementById('equipSelectDiv').style.display = (mode === 'edit') ? 'block' : 'none';
+        if (mode === 'add') {
+            document.getElementById('equipId').value = '';
+            document.getElementById('equipBrand').value = '';
+            document.getElementById('equipSerial').value = '';
+            document.getElementById('equipBuyDate').value = '';
+            document.getElementById('equipImageFile').value = '';
+        }
+    }
+
+    function fillEquipData() {
+        const selectedId = document.getElementById('editEquipSelect').value;
+        const eq = allEquip.find(e => e.id === selectedId);
+        if (eq) {
+            document.getElementById('oldEquipId').value = eq.id;
+            document.getElementById('equipRoom').value = eq.room;
+            document.getElementById('equipType').value = eq.type;
+            document.getElementById('equipId').value = eq.id;
+            document.getElementById('equipBrand').value = eq.brand;
+            document.getElementById('equipSerial').value = eq.serial;
+            
+            // แปลงวันที่ ISO ให้เข้ากับ input type="date"
+            if(eq.buyDate) {
+                const d = new Date(eq.buyDate);
+                document.getElementById('equipBuyDate').value = d.toISOString().split('T')[0];
+            } else {
+                document.getElementById('equipBuyDate').value = '';
+            }
+        }
+    }
+
+    // --- ส่วนการส่งข้อมูล (Submit Data) ---
+    async function submitRoom(e) {
         e.preventDefault();
+        const mode = document.querySelector('input[name="roomMode"]:checked').value;
+        const fileInput = document.getElementById('roomImageFile');
+        let base64Img = "";
+        
+        if (fileInput.files.length > 0) {
+            base64Img = await getBase64(fileInput.files[0]);
+        }
+
         const btn = document.getElementById('btnSaveRoom');
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> กำลังบันทึก...';
 
         const payload = {
-            action: "addRoom",
+            action: "saveRoom",
+            mode: mode,
+            oldName: document.getElementById('oldRoomName').value,
             name: document.getElementById('roomName').value,
             building: document.getElementById('roomBuilding').value,
-            image: document.getElementById('roomImage').value
+            image: base64Img
         };
+
         await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
+        alert(mode === 'add' ? "เพิ่มห้องประชุมสำเร็จ!" : "อัปเดตข้อมูลห้องสำเร็จ!");
         
-        alert("เพิ่มห้องประชุมสำเร็จ!");
-        e.target.reset();
         btn.disabled = false;
         btn.innerHTML = 'บันทึกข้อมูลห้อง';
-        window.onload(); // รีเฟรช dropdown ห้อง
+        window.location.reload(); // รีเฟรชเพื่อโหลดข้อมูลใหม่
     }
 
-    async function saveEquipment(e) {
+    async function submitEquipment(e) {
         e.preventDefault();
+        const mode = document.querySelector('input[name="equipMode"]:checked').value;
+        const fileInput = document.getElementById('equipImageFile');
+        let base64Img = "";
+        
+        if (fileInput.files.length > 0) {
+            base64Img = await getBase64(fileInput.files[0]);
+        }
+
         const btn = document.getElementById('btnSaveEquip');
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> กำลังบันทึก...';
 
         const payload = {
-            action: "addEquipment",
+            action: "saveEquipment",
+            mode: mode,
+            oldId: document.getElementById('oldEquipId').value,
             room: document.getElementById('equipRoom').value,
             type: document.getElementById('equipType').value,
             id: document.getElementById('equipId').value,
             brand: document.getElementById('equipBrand').value,
             serial: document.getElementById('equipSerial').value,
             buyDate: document.getElementById('equipBuyDate').value,
-            image: document.getElementById('equipImage').value
+            image: base64Img
         };
+
         await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
+        alert(mode === 'add' ? "เพิ่มอุปกรณ์สำเร็จ!" : "อัปเดตอุปกรณ์สำเร็จ!");
         
-        alert("เพิ่มอุปกรณ์สำเร็จ!");
-        e.target.reset();
         btn.disabled = false;
         btn.innerHTML = 'บันทึกอุปกรณ์';
+        window.location.reload();
     }
 </script>
 </body>
