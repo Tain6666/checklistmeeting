@@ -246,9 +246,14 @@
 
     function fillEquipData() {
         const selectedId = document.getElementById('editEquipSelect').value;
-        const eq = allEquip.find(e => e.id === selectedId);
+        
+        // แก้ไขบรรทัดนี้: บังคับแปลง e.id และ selectedId ให้เป็น String ก่อนนำมาเทียบกัน
+        const eq = allEquip.find(e => String(e.id) === String(selectedId));
+        
         if (eq) {
             document.getElementById('oldEquipId').value = eq.id;
+            
+            // ใช้ || '' เพื่อป้องกัน error กรณีค่าเป็น null หรือ undefined
             document.getElementById('equipRoom').value = eq.room || '';
             document.getElementById('equipType').value = eq.type || '';
             document.getElementById('equipId').value = eq.id || '';
