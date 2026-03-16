@@ -105,7 +105,7 @@
             </div>
             <div class="modal-body">
                 <div class="text-center mb-3">
-                    <img id="modalImage" src="" alt="Equipment Image" class="equip-img" onerror="this.src='https://via.placeholder.com/300x200?text=No+Image'">
+                    <img id="modalImage" src="" alt="Equipment Image" class="equip-img" onerror="this.onerror=null; this.src='data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'300\' height=\'200\'%3E%3Crect width=\'300\' height=\'200\' fill=\'%23e0e0e0\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' fill=\'%23888\' font-size=\'20\' font-family=\'sans-serif\' text-anchor=\'middle\' dy=\'.3em\'%3ENo Image%3C/text%3E%3C/svg%3E';">
                 </div>
                 <table class="table table-bordered mb-0">
                     <tbody>
@@ -223,12 +223,14 @@
             }
             document.getElementById('modalBuyDate').innerText = buyDateTxt;
             
-            // แสดงรูปภาพ (ถ้าไม่มีรูปให้ใช้รูป Placeholder)
+            // แสดงรูปภาพ (ถ้าไม่มีรูปให้ใช้รูป Placeholder แบบฝังโค้ด)
             const imgEl = document.getElementById('modalImage');
+            const noImageSvg = "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200'%3E%3Crect width='300' height='200' fill='%23e0e0e0'/%3E%3Ctext x='50%25' y='50%25' fill='%23888' font-size='20' font-family='sans-serif' text-anchor='middle' dy='.3em'%3Eไม่มีรูปภาพ%3C/text%3E%3C/svg%3E";
+            
             if (eq.image && eq.image.startsWith('http')) {
                 imgEl.src = eq.image;
             } else {
-                imgEl.src = 'https://via.placeholder.com/300x200?text=No+Image';
+                imgEl.src = noImageSvg;
             }
 
             // เปิด Modal
