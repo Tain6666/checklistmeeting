@@ -314,8 +314,18 @@
             image: base64Img
         };
 
-        await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
-        alert(mode === 'add' ? "เพิ่มอุปกรณ์สำเร็จ!" : "อัปเดตอุปกรณ์สำเร็จ!");
+        // ส่งข้อมูลไปที่ GAS
+        const response = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
+        const result = await response.json(); // อ่านค่าที่ Backend ตอบกลับมา
+
+        if (result.status === "success") {
+            alert(mode === 'add' ? "เพิ่มอุปกรณ์สำเร็จ!" : "อัปเดตอุปกรณ์สำเร็จ!");
+            e.target.reset();
+            window.location.reload();
+        } else {
+            // ถ้าพัง จะแจ้งเตือนบอกสาเหตุ
+            alert("เกิดข้อผิดพลาด: " + result.message);
+        }
         
         btn.disabled = false;
         btn.innerHTML = 'บันทึกอุปกรณ์';
