@@ -4,15 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit - จัดการข้อมูล</title>
+    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.3/dist/sweetalert2.min.css" rel="stylesheet">
+    
     <style>
         body { font-family: 'Prompt', sans-serif; background-color: #f4f7f6; }
         .navbar { box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .card { border: none; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
         .form-control, .form-select { border-radius: 8px; }
         .btn { border-radius: 8px; font-weight: 500; }
-        .mode-toggle { cursor: pointer; }
+        /* ปรับแต่ง SweetAlert ให้เข้ากับฟอนต์ Prompt */
+        .swal2-title, .swal2-html-container { font-family: 'Prompt', sans-serif !important; }
     </style>
 </head>
 <body>
@@ -52,7 +57,7 @@
                     <form onsubmit="submitRoom(event)">
                         <div class="mb-3" id="roomSelectDiv" style="display:none;">
                             <label class="form-label text-muted">เลือกห้องที่ต้องการแก้ไข</label>
-                            <select id="editRoomSelect" class="form-select bg-light" onchange="fillRoomData()">
+                            <select id="editRoomSelect" class="form-select bg-light border-primary" onchange="fillRoomData()">
                                 <option value="">-- เลือกห้อง --</option>
                             </select>
                         </div>
@@ -92,7 +97,7 @@
                     <form onsubmit="submitEquipment(event)">
                         <div class="mb-3" id="equipSelectDiv" style="display:none;">
                             <label class="form-label text-muted">เลือกอุปกรณ์ที่ต้องการแก้ไข (ค้นหาจากรหัส)</label>
-                            <select id="editEquipSelect" class="form-select bg-light" onchange="fillEquipData()">
+                            <select id="editEquipSelect" class="form-select bg-light border-secondary" onchange="fillEquipData()">
                                 <option value="">-- เลือกอุปกรณ์ --</option>
                             </select>
                         </div>
@@ -156,6 +161,8 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.3/dist/sweetalert2.all.min.js"></script>
+
 <script>
     // ** ใส่ Web App URL ของคุณที่นี่ **
     const GAS_URL = "https://script.google.com/macros/s/AKfycbw3cng8MCNieY1EVNsvhEx2EB3Gccj8AZLbobzhs0vhPxbFFGTDoU-BFn_Be0mW95-2uA/exec"; 
@@ -163,7 +170,7 @@
     let allRooms = [];
     let allEquip = [];
 
-    // โหลดข้อมูลตั้งต้น
+    // โหลดข้อมูลตั้งต้นด้วย SweetAlert Loading
     window.onload = async () => {
         try {
             const [resRooms, resEquip] = await Promise.all([
@@ -175,25 +182,22 @@
             
             updateDropdowns();
         } catch (error) {
-            console.error("Error loading data", error);
+            Swal.fire('ข้อผิดพลาด', 'ไม่สามารถโหลดข้อมูลจากระบบได้', 'error');
         }
     };
 
     function updateDropdowns() {
-        // อัปเดต Dropdown ห้อง
         const roomSelects = [document.getElementById('equipRoom'), document.getElementById('editRoomSelect')];
         roomSelects.forEach(sel => {
             sel.innerHTML = '<option value="">-- เลือกห้อง --</option>';
             allRooms.forEach(r => sel.innerHTML += `<option value="${r.name}">${r.name}</option>`);
         });
 
-        // อัปเดต Dropdown อุปกรณ์
         const equipSel = document.getElementById('editEquipSelect');
         equipSel.innerHTML = '<option value="">-- เลือกอุปกรณ์ --</option>';
         allEquip.forEach(eq => equipSel.innerHTML += `<option value="${eq.id}">[${eq.room}] ${eq.id} - ${eq.type}</option>`);
     }
 
-    // แปลงไฟล์รูปเป็น Base64
     const getBase64 = (file) => new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.readAsDataURL(file);
@@ -201,11 +205,12 @@
         reader.onerror = error => reject(error);
     });
 
-    // --- ส่วนจัดการหน้าจอ (UI Logic) ---
+    // --- จัดการ UI ฝั่งห้องประชุม ---
     function toggleRoomMode() {
         const mode = document.querySelector('input[name="roomMode"]:checked').value;
         document.getElementById('roomSelectDiv').style.display = (mode === 'edit') ? 'block' : 'none';
         if (mode === 'add') {
+            document.getElementById('editRoomSelect').value = '';
             document.getElementById('roomName').value = '';
             document.getElementById('roomBuilding').value = '';
             document.getElementById('roomImageFile').value = '';
@@ -219,13 +224,18 @@
             document.getElementById('oldRoomName').value = room.name;
             document.getElementById('roomName').value = room.name;
             document.getElementById('roomBuilding').value = room.building;
+            document.getElementById('roomImageFile').value = ''; // รีเซ็ตช่องไฟล์
         }
     }
 
+    // --- จัดการ UI ฝั่งอุปกรณ์ ---
     function toggleEquipMode() {
         const mode = document.querySelector('input[name="equipMode"]:checked').value;
         document.getElementById('equipSelectDiv').style.display = (mode === 'edit') ? 'block' : 'none';
         if (mode === 'add') {
+            document.getElementById('editEquipSelect').value = '';
+            document.getElementById('equipRoom').value = '';
+            document.getElementById('equipType').value = '';
             document.getElementById('equipId').value = '';
             document.getElementById('equipBrand').value = '';
             document.getElementById('equipSerial').value = '';
@@ -239,36 +249,42 @@
         const eq = allEquip.find(e => e.id === selectedId);
         if (eq) {
             document.getElementById('oldEquipId').value = eq.id;
-            document.getElementById('equipRoom').value = eq.room;
-            document.getElementById('equipType').value = eq.type;
-            document.getElementById('equipId').value = eq.id;
-            document.getElementById('equipBrand').value = eq.brand;
-            document.getElementById('equipSerial').value = eq.serial;
+            document.getElementById('equipRoom').value = eq.room || '';
+            document.getElementById('equipType').value = eq.type || '';
+            document.getElementById('equipId').value = eq.id || '';
+            document.getElementById('equipBrand').value = eq.brand || '';
+            document.getElementById('equipSerial').value = eq.serial || '';
+            document.getElementById('equipImageFile').value = ''; // รีเซ็ตช่องไฟล์
             
-            // แปลงวันที่ ISO ให้เข้ากับ input type="date"
             if(eq.buyDate) {
+                // แปลงรูปแบบวันที่เพื่อแสดงในช่อง input type="date"
                 const d = new Date(eq.buyDate);
-                document.getElementById('equipBuyDate').value = d.toISOString().split('T')[0];
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                document.getElementById('equipBuyDate').value = `${year}-${month}-${day}`;
             } else {
                 document.getElementById('equipBuyDate').value = '';
             }
         }
     }
 
-    // --- ส่วนการส่งข้อมูล (Submit Data) ---
+    // --- บันทึกข้อมูลพร้อมแจ้งเตือน SweetAlert2 ---
     async function submitRoom(e) {
         e.preventDefault();
         const mode = document.querySelector('input[name="roomMode"]:checked').value;
         const fileInput = document.getElementById('roomImageFile');
         let base64Img = "";
         
-        if (fileInput.files.length > 0) {
-            base64Img = await getBase64(fileInput.files[0]);
-        }
+        if (fileInput.files.length > 0) base64Img = await getBase64(fileInput.files[0]);
 
-        const btn = document.getElementById('btnSaveRoom');
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> กำลังบันทึก...';
+        // โชว์ Loading
+        Swal.fire({
+            title: 'กำลังบันทึกข้อมูล...',
+            text: 'กรุณารอสักครู่ (หากมีการอัปโหลดรูปอาจใช้เวลาสักพัก)',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading() }
+        });
 
         const payload = {
             action: "saveRoom",
@@ -279,12 +295,23 @@
             image: base64Img
         };
 
-        await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
-        alert(mode === 'add' ? "เพิ่มห้องประชุมสำเร็จ!" : "อัปเดตข้อมูลห้องสำเร็จ!");
-        
-        btn.disabled = false;
-        btn.innerHTML = 'บันทึกข้อมูลห้อง';
-        window.location.reload(); // รีเฟรชเพื่อโหลดข้อมูลใหม่
+        try {
+            const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
+            const result = await res.json();
+            
+            if (result.status === "success") {
+                Swal.fire({
+                    icon: 'success',
+                    title: mode === 'add' ? 'เพิ่มห้องประชุมสำเร็จ!' : 'อัปเดตข้อมูลสำเร็จ!',
+                    confirmButtonText: 'ตกลง',
+                    confirmButtonColor: '#0d6efd'
+                }).then(() => { window.location.reload(); });
+            } else {
+                Swal.fire('ข้อผิดพลาด', result.message, 'error');
+            }
+        } catch (err) {
+            Swal.fire('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้', 'error');
+        }
     }
 
     async function submitEquipment(e) {
@@ -293,13 +320,14 @@
         const fileInput = document.getElementById('equipImageFile');
         let base64Img = "";
         
-        if (fileInput.files.length > 0) {
-            base64Img = await getBase64(fileInput.files[0]);
-        }
+        if (fileInput.files.length > 0) base64Img = await getBase64(fileInput.files[0]);
 
-        const btn = document.getElementById('btnSaveEquip');
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> กำลังบันทึก...';
+        Swal.fire({
+            title: 'กำลังบันทึกข้อมูล...',
+            text: 'กรุณารอสักครู่ (หากมีการอัปโหลดรูปอาจใช้เวลาสักพัก)',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading() }
+        });
 
         const payload = {
             action: "saveEquipment",
@@ -314,22 +342,23 @@
             image: base64Img
         };
 
-        // ส่งข้อมูลไปที่ GAS
-        const response = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
-        const result = await response.json(); // อ่านค่าที่ Backend ตอบกลับมา
-
-        if (result.status === "success") {
-            alert(mode === 'add' ? "เพิ่มอุปกรณ์สำเร็จ!" : "อัปเดตอุปกรณ์สำเร็จ!");
-            e.target.reset();
-            window.location.reload();
-        } else {
-            // ถ้าพัง จะแจ้งเตือนบอกสาเหตุ
-            alert("เกิดข้อผิดพลาด: " + result.message);
+        try {
+            const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
+            const result = await res.json();
+            
+            if (result.status === "success") {
+                Swal.fire({
+                    icon: 'success',
+                    title: mode === 'add' ? 'เพิ่มอุปกรณ์สำเร็จ!' : 'อัปเดตอุปกรณ์สำเร็จ!',
+                    confirmButtonText: 'ตกลง',
+                    confirmButtonColor: '#6c757d'
+                }).then(() => { window.location.reload(); });
+            } else {
+                Swal.fire('ข้อผิดพลาด', result.message, 'error');
+            }
+        } catch (err) {
+            Swal.fire('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้', 'error');
         }
-        
-        btn.disabled = false;
-        btn.innerHTML = 'บันทึกอุปกรณ์';
-        window.location.reload();
     }
 </script>
 </body>
