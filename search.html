@@ -240,24 +240,22 @@
             Swal.fire('ไม่พบข้อมูล', `ไม่มีอุปกรณ์รหัส ${id} ในระบบ`, 'warning');
         }
     }
-
-    // ================= ระบบสแกน QR Code / Barcode =================
+    // ================= ระบบสแกน QR Code / Barcode (ปรับปรุงใหม่) =================
     function startScanner() {
         const qrDiv = document.getElementById('qr-reader');
         
-        // ถ้ากำลังเปิดกล้องอยู่ ให้ปิดกล้อง
         if (qrDiv.style.display === 'block') {
             if (html5QrcodeScanner) html5QrcodeScanner.clear();
             qrDiv.style.display = 'none';
             return;
         }
 
-        // เปิดกล้อง
         qrDiv.style.display = 'block';
         
+        // ปรับตั้งค่าใหม่: เอาขอบ qrbox ออก เพื่อให้กล้องจับภาพ QR จากจุดไหนของจอก็ได้ และจับได้ไวขึ้น
         html5QrcodeScanner = new Html5QrcodeScanner(
             "qr-reader", 
-            { fps: 10, qrbox: {width: 250, height: 250} }, 
+            { fps: 15 }, // เพิ่มเฟรมเรตให้กล้องสแกนลื่นขึ้น
             false
         );
         
@@ -265,34 +263,24 @@
     }
 
     function onScanSuccess(decodedText, decodedResult) {
-        // 1. ปิดกล้องทันทีที่สแกนติด
+        // 1. ดักจับทันทีด้วย Alert ธรรมดา เพื่อยืนยันว่ากล้องอ่านค่าออกแล้วแน่ๆ
+        alert("จับรหัสได้แล้ว: " + decodedText);
+
+        // 2. ปิดกล้อง
         html5QrcodeScanner.clear();
         document.getElementById('qr-reader').style.display = 'none';
         
-        // 2. ทำความสะอาดข้อความที่สแกนได้ (ลบช่องว่างหัวท้ายออก)
+        // 3. ทำความสะอาดข้อความ
         const cleanText = decodedText.trim();
         
-        // --- ส่วนนี้เพิ่มเข้ามาเพื่อทดสอบ ---
-        // แจ้งเตือนให้เรารู้ว่าระบบสแกนอ่านค่าอะไรได้ออกมา
-        Swal.fire({
-            title: 'สแกนสำเร็จ!',
-            text: `รหัสที่อ่านได้คือ: "${cleanText}"`,
-            icon: 'success',
-            timer: 1500, // โชว์ 1.5 วินาทีแล้วไปต่อ
-            showConfirmButton: false
-        }).then(() => {
-            // 3. เอาค่าที่ทำความสะอาดแล้วไปค้นหาและเปิด Modal
-            showDetails(cleanText);
-            
-            // 4. ใส่รหัสลงในช่องค้นหาให้ด้วย
-            document.getElementById('searchId').value = cleanText;
-            filterData();
-        });
+        // 4. ค้นหาและเปิด Modal
+        document.getElementById('searchId').value = cleanText;
+        filterData();
+        showDetails(cleanText);
     }
 
     function onScanFailure(error) {
-        // ปล่อยผ่าน (ระบบสแกนจะทำงานเช็คเฟรมต่อไปเรื่อยๆ)
-        // console.warn(`Code scan error = ${error}`);
+        // ซ่อน Error ไว้เพื่อไม่ให้กวนใจเวลากล้องกำลังพยายามโฟกัส
     }
 </script>
 </body>
