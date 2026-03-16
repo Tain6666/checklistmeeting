@@ -265,16 +265,29 @@
     }
 
     function onScanSuccess(decodedText, decodedResult) {
-        // เมื่อสแกนสำเร็จ ให้ปิดกล้องและโชว์รายละเอียด
+        // 1. ปิดกล้องทันทีที่สแกนติด
         html5QrcodeScanner.clear();
         document.getElementById('qr-reader').style.display = 'none';
         
-        // เอาค่าที่สแกนได้ไปค้นหาและเปิด Modal
-        showDetails(decodedText);
+        // 2. ทำความสะอาดข้อความที่สแกนได้ (ลบช่องว่างหัวท้ายออก)
+        const cleanText = decodedText.trim();
         
-        // แนะนำให้ใส่รหัสที่สแกนได้ลงในช่องค้นหาด้วย
-        document.getElementById('searchId').value = decodedText;
-        filterData();
+        // --- ส่วนนี้เพิ่มเข้ามาเพื่อทดสอบ ---
+        // แจ้งเตือนให้เรารู้ว่าระบบสแกนอ่านค่าอะไรได้ออกมา
+        Swal.fire({
+            title: 'สแกนสำเร็จ!',
+            text: `รหัสที่อ่านได้คือ: "${cleanText}"`,
+            icon: 'success',
+            timer: 1500, // โชว์ 1.5 วินาทีแล้วไปต่อ
+            showConfirmButton: false
+        }).then(() => {
+            // 3. เอาค่าที่ทำความสะอาดแล้วไปค้นหาและเปิด Modal
+            showDetails(cleanText);
+            
+            // 4. ใส่รหัสลงในช่องค้นหาให้ด้วย
+            document.getElementById('searchId').value = cleanText;
+            filterData();
+        });
     }
 
     function onScanFailure(error) {
