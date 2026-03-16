@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search & Scan - ค้นหาอุปกรณ์</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.3/dist/sweetalert2.min.css" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Prompt', sans-serif; background-color: #f4f7f6; }
+        .navbar { box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
+        .form-control, .form-select { border-radius: 8px; }
+        .btn { border-radius: 8px; font-weight: 500; }
+        .swal2-title, .swal2-html-container { font-family: 'Prompt', sans-serif !important; }
+        
+        /* ตกแต่งตารางและรูปภาพใน Modal */
+        .equip-img { width: 100%; max-height: 250px; object-fit: contain; background-color: #f8f9fa; border-radius: 8px; }
+        .table-responsive { border-radius: 8px; overflow: hidden; }
+        
+        /* ซ่อนกรอบสแกนเนอร์ตอนเริ่มต้น */
+        #qr-reader { display: none; margin-bottom: 20px; border-radius: 8px; overflow: hidden; border: 2px solid #0d6efd; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="index.html">🏢 Room Check System</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" href="index.html">📋 เช็คลิสต์อุปกรณ์</a></li>
+                <li class="nav-item"><a class="nav-link" href="dashboard.html">📊 แดชบอร์ด</a></li>
+                <li class="nav-item"><a class="nav-link" href="edit.html">⚙️ จัดการข้อมูล</a></li>
+                <li class="nav-item"><a class="nav-link active" href="search.html">🔍 ค้นหา/สแกน</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold text-secondary mb-0">🔍 ค้นหาและสแกนอุปกรณ์</h3>
+        <button class="btn btn-primary shadow-sm" onclick="startScanner()">
+            📷 สแกน QR Code
+        </button>
+    </div>
+
+    <div id="qr-reader"></div>
+
+    <div class="card mb-4">
+        <div class="card-body p-4">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label text-muted">ค้นหาจากรหัสทรัพย์สิน</label>
+                    <input type="text" id="searchId" class="form-control bg-light" placeholder="พิมพ์รหัส..." onkeyup="filterData()">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label text-muted">กรองตามห้องประชุม</label>
+                    <select id="filterRoom" class="form-select bg-light" onchange="filterData()">
+                        <option value="">-- ทุกห้องประชุม --</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label text-muted">กรองตามประเภทเครื่อง</label>
+                    <select id="filterType" class="form-select bg-light" onchange="filterData()">
+                        <option value="">-- ทุกประเภท --</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover bg-white mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>รหัสทรัพย์สิน</th>
+                        <th>ประเภท</th>
+                        <th>ห้องประชุม</th>
+                        <th class="text-center">จัดการ</th>
+                    </tr>
+                </thead>
+                <tbody id="equipTableBody">
+                    <tr><td colspan="4" class="text-center py-4 text-muted">กำลังโหลดข้อมูล...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="equipDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold">📄 รายละเอียดอุปกรณ์</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <img id="modalImage" src="" alt="Equipment Image" class="equip-img" onerror="this.src='https://via.placeholder.com/300x200?text=No+Image'">
+                </div>
+                <table class="table table-bordered mb-0">
+                    <tbody>
+                        <tr><th class="bg-light" width="40%">รหัสทรัพย์สิน</th><td id="modalId" class="fw-bold text-primary"></td></tr>
+                        <tr><th class="bg-light">ประเภทเครื่อง</th><td id="modalType"></td></tr>
+                        <tr><th class="bg-light">ห้องประชุม</th><td id="modalRoom"></td></tr>
+                        <tr><th class="bg-light">ยี่ห้อ/รุ่น</th><td id="modalBrand"></td></tr>
+                        <tr><th class="bg-light">Serial No.</th><td id="modalSerial"></td></tr>
+                        <tr><th class="bg-light">วันที่ซื้อ</th><td id="modalBuyDate"></td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary w-100" data-bs-dismiss="modal">ปิดหน้าต่าง</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.3/dist/sweetalert2.all.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
+<script>
+    // ** ใส่ Web App URL ของคุณที่นี่ **
+    const GAS_URL = "https://script.google.com/macros/s/YOUR_WEB_APP_ID/exec"; 
+    
+    let allEquip = [];
+    let html5QrcodeScanner = null;
+
+    // โหลดข้อมูลทั้งหมดเมื่อเปิดหน้า
+    window.onload = async () => {
+        Swal.fire({ title: 'กำลังโหลดข้อมูล...', didOpen: () => Swal.showLoading() });
+        try {
+            const res = await fetch(`${GAS_URL}?action=getAllEquipment`);
+            allEquip = await res.json();
+            
+            populateFilters();
+            renderTable(allEquip);
+            Swal.close();
+        } catch (error) {
+            Swal.fire('ข้อผิดพลาด', 'ไม่สามารถโหลดข้อมูลอุปกรณ์ได้', 'error');
+        }
+    };
+
+    // ดึงรายชื่อห้องและประเภทจากข้อมูลที่มี มาใส่ใน Dropdown
+    function populateFilters() {
+        const rooms = [...new Set(allEquip.map(e => e.room).filter(Boolean))];
+        const types = [...new Set(allEquip.map(e => e.type).filter(Boolean))];
+        
+        const roomSel = document.getElementById('filterRoom');
+        const typeSel = document.getElementById('filterType');
+        
+        rooms.sort().forEach(r => roomSel.innerHTML += `<option value="${r}">${r}</option>`);
+        types.sort().forEach(t => typeSel.innerHTML += `<option value="${t}">${t}</option>`);
+    }
+
+    // สร้างตารางข้อมูล
+    function renderTable(data) {
+        const tbody = document.getElementById('equipTableBody');
+        tbody.innerHTML = '';
+        
+        if (data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-danger">ไม่พบอุปกรณ์ที่ค้นหา</td></tr>';
+            return;
+        }
+
+        data.forEach(eq => {
+            tbody.innerHTML += `
+                <tr>
+                    <td class="fw-bold text-primary">${eq.id}</td>
+                    <td>${eq.type}</td>
+                    <td>${eq.room}</td>
+                    <td class="text-center">
+                        <button class="btn btn-sm btn-info text-white shadow-sm" onclick="showDetails('${eq.id}')">
+                            ℹ️ ดูข้อมูล
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    // กรองข้อมูลตามที่พิมพ์หรือเลือกใน Dropdown
+    function filterData() {
+        const txtId = document.getElementById('searchId').value.toLowerCase();
+        const selRoom = document.getElementById('filterRoom').value;
+        const selType = document.getElementById('filterType').value;
+
+        const filtered = allEquip.filter(eq => {
+            const matchId = String(eq.id).toLowerCase().includes(txtId);
+            const matchRoom = selRoom === "" || eq.room === selRoom;
+            const matchType = selType === "" || eq.type === selType;
+            return matchId && matchRoom && matchType;
+        });
+        renderTable(filtered);
+    }
+
+    // แสดง Modal รายละเอียดอุปกรณ์
+    function showDetails(id) {
+        const eq = allEquip.find(e => String(e.id) === String(id));
+        if (eq) {
+            // ใส่ข้อมูลลงใน Modal
+            document.getElementById('modalId').innerText = eq.id || '-';
+            document.getElementById('modalType').innerText = eq.type || '-';
+            document.getElementById('modalRoom').innerText = eq.room || '-';
+            document.getElementById('modalBrand').innerText = eq.brand || '-';
+            document.getElementById('modalSerial').innerText = eq.serial || '-';
+            
+            // จัดรูปแบบวันที่
+            let buyDateTxt = '-';
+            if (eq.buyDate) {
+                const d = new Date(eq.buyDate);
+                buyDateTxt = d.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+            }
+            document.getElementById('modalBuyDate').innerText = buyDateTxt;
+            
+            // แสดงรูปภาพ (ถ้าไม่มีรูปให้ใช้รูป Placeholder)
+            const imgEl = document.getElementById('modalImage');
+            if (eq.image && eq.image.startsWith('http')) {
+                imgEl.src = eq.image;
+            } else {
+                imgEl.src = 'https://via.placeholder.com/300x200?text=No+Image';
+            }
+
+            // เปิด Modal
+            const modal = new bootstrap.Modal(document.getElementById('equipDetailModal'));
+            modal.show();
+        } else {
+            Swal.fire('ไม่พบข้อมูล', `ไม่มีอุปกรณ์รหัส ${id} ในระบบ`, 'warning');
+        }
+    }
+
+    // ================= ระบบสแกน QR Code / Barcode =================
+    function startScanner() {
+        const qrDiv = document.getElementById('qr-reader');
+        
+        // ถ้ากำลังเปิดกล้องอยู่ ให้ปิดกล้อง
+        if (qrDiv.style.display === 'block') {
+            if (html5QrcodeScanner) html5QrcodeScanner.clear();
+            qrDiv.style.display = 'none';
+            return;
+        }
+
+        // เปิดกล้อง
+        qrDiv.style.display = 'block';
+        
+        html5QrcodeScanner = new Html5QrcodeScanner(
+            "qr-reader", 
+            { fps: 10, qrbox: {width: 250, height: 250} }, 
+            false
+        );
+        
+        html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+    }
+
+    function onScanSuccess(decodedText, decodedResult) {
+        // เมื่อสแกนสำเร็จ ให้ปิดกล้องและโชว์รายละเอียด
+        html5QrcodeScanner.clear();
+        document.getElementById('qr-reader').style.display = 'none';
+        
+        // เอาค่าที่สแกนได้ไปค้นหาและเปิด Modal
+        showDetails(decodedText);
+        
+        // แนะนำให้ใส่รหัสที่สแกนได้ลงในช่องค้นหาด้วย
+        document.getElementById('searchId').value = decodedText;
+        filterData();
+    }
+
+    function onScanFailure(error) {
+        // ปล่อยผ่าน (ระบบสแกนจะทำงานเช็คเฟรมต่อไปเรื่อยๆ)
+        // console.warn(`Code scan error = ${error}`);
+    }
+</script>
+</body>
+</html>
