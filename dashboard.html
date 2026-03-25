@@ -6,22 +6,20 @@
     <title>Dashboard - สถิติห้องประชุม</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.3/dist/sweetalert2.min.css" rel="stylesheet">
     
     <style>
-        body {
-            font-family: 'Prompt', sans-serif;
-            background-color: #f4f7f6;
-        }
+        body { font-family: 'Prompt', sans-serif; background-color: #f4f7f6; }
         .navbar { box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .card {
-            border: none;
-            border-radius: 12px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-        }
-        .stat-card { transition: transform 0.2s; }
-        .stat-card:hover { transform: translateY(-5px); }
-        .table { vertical-align: middle; }
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .stat-box { border-radius: 10px; padding: 15px; color: #fff; text-align: center; }
+        .bg-before { background-color: #0d6efd; } /* สีน้ำเงิน */
+        .bg-after { background-color: #6f42c1; }  /* สีม่วง */
+        .bg-normal { background-color: #198754; } /* สีเขียว */
+        .bg-broken { background-color: #dc3545; } /* สีแดง */
+        .stat-num { font-size: 2rem; font-weight: 700; margin-bottom: 0; }
+        .swal2-title, .swal2-html-container { font-family: 'Prompt', sans-serif !important; }
     </style>
 </head>
 <body>
@@ -46,46 +44,70 @@
 <div class="container mt-4 mb-5">
     <h3 class="mb-4 fw-bold text-secondary">📊 Dashboard สถิติอุปกรณ์ห้องประชุม</h3>
 
-    <div class="row mb-4 text-center g-3">
-        <div class="col-md-6">
-            <div class="card stat-card text-white bg-success h-100 p-3">
+    <div class="row">
+        <div class="col-lg-6">
+            
+            <div class="card">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h5 class="mb-0 fw-bold text-primary">📅 สรุปสถิติการเช็ค "วันนี้"</h5>
+                </div>
                 <div class="card-body">
-                    <h5 class="card-title fw-normal">อุปกรณ์สถานะปกติ (ล่าสุด)</h5>
-                    <h1 class="card-text display-4 fw-bold" id="normalCount">
-                        <span class="spinner-border" role="status"></span>
-                    </h1>
+                    <div class="row g-2">
+                        <div class="col-6"><div class="stat-box bg-before">ก่อนประชุม<p class="stat-num" id="todayBefore">0</p></div></div>
+                        <div class="col-6"><div class="stat-box bg-after">หลังประชุม<p class="stat-num" id="todayAfter">0</p></div></div>
+                        <div class="col-6"><div class="stat-box bg-normal">เครื่องปกติ<p class="stat-num" id="todayNormal">0</p></div></div>
+                        <div class="col-6"><div class="stat-box bg-broken">เครื่องผิดปกติ<p class="stat-num" id="todayBroken">0</p></div></div>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card stat-card text-white bg-danger h-100 p-3">
+
+            <div class="card">
+                <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold text-secondary">📆 สรุปสถิติ "รายเดือน"</h5>
+                    <input type="month" id="monthPicker" class="form-control form-control-sm w-auto" onchange="calculateMonthlyStats()">
+                </div>
                 <div class="card-body">
-                    <h5 class="card-title fw-normal">อุปกรณ์ที่พบปัญหา (ผิดปกติ)</h5>
-                    <h1 class="card-text display-4 fw-bold" id="brokenCount">
-                        <span class="spinner-border" role="status"></span>
-                    </h1>
+                    <div class="row g-2">
+                        <div class="col-6"><div class="stat-box bg-before">ก่อนประชุม<p class="stat-num" id="monthBefore">0</p></div></div>
+                        <div class="col-6"><div class="stat-box bg-after">หลังประชุม<p class="stat-num" id="monthAfter">0</p></div></div>
+                        <div class="col-6"><div class="stat-box bg-normal">เครื่องปกติ<p class="stat-num" id="monthNormal">0</p></div></div>
+                        <div class="col-6"><div class="stat-box bg-broken">เครื่องผิดปกติ<p class="stat-num" id="monthBroken">0</p></div></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h5 class="mb-0 fw-bold text-danger">📈 กราฟอุปกรณ์ผิดปกติ (พ.ค. - เม.ย.)</h5>
+                </div>
+                <div class="card-body d-flex align-items-center">
+                    <canvas id="brokenChart" style="width: 100%; height: 300px;"></canvas>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="card">
-        <div class="card-header bg-white border-bottom py-3">
-            <h5 class="mb-0 fw-bold text-warning-emphasis">⚠️ รายการอุปกรณ์ที่พบปัญหาล่าสุด</h5>
+    <div class="card mt-2">
+        <div class="card-header bg-warning text-dark fw-bold py-3">
+            ⚠️ รายการอุปกรณ์ที่พบปัญหาล่าสุด (10 รายการ)
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover mb-0">
                     <thead class="table-light">
                         <tr>
-                            <th class="ps-4">วันที่เช็ค</th>
+                            <th class="ps-4">วันที่/เวลา</th>
+                            <th>ช่วงเวลา</th>
                             <th>ห้องประชุม</th>
                             <th>ประเภทเครื่อง</th>
                             <th>หมายเหตุ</th>
                         </tr>
                     </thead>
                     <tbody id="issueList">
-                        <tr><td colspan="4" class="text-center py-4 text-muted">กำลังโหลดข้อมูล...</td></tr>
+                        <tr><td colspan="5" class="text-center py-4 text-muted">กำลังโหลดข้อมูล...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -94,38 +116,175 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.3/dist/sweetalert2.all.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script>
     // ** ใส่ Web App URL ของคุณที่นี่ **
     const GAS_URL = "https://script.google.com/macros/s/AKfycbw3cng8MCNieY1EVNsvhEx2EB3Gccj8AZLbobzhs0vhPxbFFGTDoU-BFn_Be0mW95-2uA/exec"; 
+    
+    let allLogs = [];
+    let brokenChartInstance = null;
 
     window.onload = async () => {
+        Swal.fire({ title: 'กำลังโหลดสถิติ...', didOpen: () => Swal.showLoading() });
         try {
             const res = await fetch(`${GAS_URL}?action=getDashboard`);
             const data = await res.json();
+            allLogs = data.logs || [];
             
-            document.getElementById('normalCount').innerText = data.normal;
-            document.getElementById('brokenCount').innerText = data.broken;
-
-            const tbody = document.getElementById('issueList');
-            if(data.issues.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-success fw-medium">✅ ไม่พบอุปกรณ์ที่มีปัญหาในรอบการเช็คล่าสุด</td></tr>';
-            } else {
-                tbody.innerHTML = '';
-                data.issues.forEach(issue => {
-                    tbody.innerHTML += `
-                        <tr>
-                            <td class="ps-4">${issue.date}</td>
-                            <td class="fw-medium">${issue.room}</td>
-                            <td>${issue.type}</td>
-                            <td class="text-danger">${issue.remark || '-'}</td>
-                        </tr>
-                    `;
-                });
-            }
+            // ข้ามข้อมูลที่ไม่มีวันที่
+            allLogs = allLogs.filter(log => log.date);
+            
+            setupMonthPicker();
+            calculateTodayStats();
+            calculateMonthlyStats();
+            renderChart();
+            renderRecentIssues();
+            
+            Swal.close();
         } catch (error) {
-            document.getElementById('issueList').innerHTML = '<tr><td colspan="4" class="text-center py-4 text-danger">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>';
+            Swal.fire('ข้อผิดพลาด', 'ไม่สามารถโหลดข้อมูลสถิติได้', 'error');
         }
     };
+
+    // ตั้งค่า Default เดือนปัจจุบันให้ตัวเลือกเดือน
+    function setupMonthPicker() {
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        document.getElementById('monthPicker').value = `${yyyy}-${mm}`;
+    }
+
+    // คำนวณสถิติวันนี้
+    function calculateTodayStats() {
+        const todayStr = new Date().toDateString(); // เช่น "Wed Mar 25 2026"
+        const todayLogs = allLogs.filter(log => new Date(log.date).toDateString() === todayStr);
+
+        let before = 0, after = 0, normal = 0, broken = 0;
+        todayLogs.forEach(l => {
+            if(l.period === 'ก่อนประชุม') before++;
+            if(l.period === 'หลังประชุม') after++;
+            if(l.status === 'ปกติ') normal++;
+            if(l.status === 'ผิดปกติ') broken++;
+        });
+
+        document.getElementById('todayBefore').innerText = before;
+        document.getElementById('todayAfter').innerText = after;
+        document.getElementById('todayNormal').innerText = normal;
+        document.getElementById('todayBroken').innerText = broken;
+    }
+
+    // คำนวณสถิติรายเดือน (ตามที่เลือก)
+    function calculateMonthlyStats() {
+        const selected = document.getElementById('monthPicker').value; // ได้ค่า "YYYY-MM"
+        if(!selected) return;
+        
+        const [year, month] = selected.split('-');
+        
+        const monthLogs = allLogs.filter(log => {
+            const d = new Date(log.date);
+            return d.getFullYear() == year && (d.getMonth() + 1) == month;
+        });
+
+        let before = 0, after = 0, normal = 0, broken = 0;
+        monthLogs.forEach(l => {
+            if(l.period === 'ก่อนประชุม') before++;
+            if(l.period === 'หลังประชุม') after++;
+            if(l.status === 'ปกติ') normal++;
+            if(l.status === 'ผิดปกติ') broken++;
+        });
+
+        document.getElementById('monthBefore').innerText = before;
+        document.getElementById('monthAfter').innerText = after;
+        document.getElementById('monthNormal').innerText = normal;
+        document.getElementById('monthBroken').innerText = broken;
+    }
+
+    // วาดกราฟแท่งแบบ พ.ค. - เม.ย.
+    function renderChart() {
+        const now = new Date();
+        let startYear = now.getFullYear();
+        // ถ้าย้อนไปอยู่ในช่วง ม.ค.-เม.ย. แปลว่าอยู่ในปีงบประมาณของปีที่แล้ว
+        if (now.getMonth() < 4) { startYear--; }
+
+        // กำหนดเดือนและเลข Index ของเดือน (พ.ค.=4, มิ.ย.=5 ... ม.ค.=0, เม.ย.=3)
+        const monthNames = ['พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.', 'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.'];
+        const monthIndices = [4, 5, 6, 7, 8, 9, 10, 11, 0, 1, 2, 3];
+        const brokenCounts = new Array(12).fill(0);
+
+        allLogs.forEach(log => {
+            if(log.status !== 'ผิดปกติ') return;
+            const d = new Date(log.date);
+            const y = d.getFullYear();
+            const m = d.getMonth();
+
+            for(let i=0; i<12; i++) {
+                let targetMonth = monthIndices[i];
+                // เดือน 1-8 (พ.ค.-ธ.ค.) ใช้ startYear, เดือน 9-12 (ม.ค.-เม.ย.) ใช้ startYear + 1
+                let targetYear = (i < 8) ? startYear : startYear + 1; 
+                if (y === targetYear && m === targetMonth) {
+                    brokenCounts[i]++;
+                    break;
+                }
+            }
+        });
+
+        const ctx = document.getElementById('brokenChart').getContext('2d');
+        if(brokenChartInstance) { brokenChartInstance.destroy(); } // ลบกราฟเก่าถ้ามี
+        
+        brokenChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: monthNames,
+                datasets: [{
+                    label: 'จำนวนอุปกรณ์ที่พบปัญหา (ครั้ง)',
+                    data: brokenCounts,
+                    backgroundColor: 'rgba(220, 53, 69, 0.7)', // สีแดงใสๆ
+                    borderColor: 'rgba(220, 53, 69, 1)',
+                    borderWidth: 1,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                }
+            }
+        });
+    }
+
+    // แสดงรายการปัญหาล่าสุด 10 รายการ
+    function renderRecentIssues() {
+        const tbody = document.getElementById('issueList');
+        // กรองเอาเฉพาะที่ผิดปกติ แล้วเรียงลำดับใหม่ล่าสุดขึ้นก่อน
+        const issues = allLogs.filter(l => l.status === 'ผิดปกติ')
+                              .reverse()
+                              .slice(0, 10);
+                              
+        if(issues.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-success fw-medium">✅ ไม่พบอุปกรณ์ที่มีปัญหาในระบบ</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = '';
+        issues.forEach(issue => {
+            const d = new Date(issue.date);
+            const dateStr = d.toLocaleDateString('th-TH') + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+            
+            tbody.innerHTML += `
+                <tr>
+                    <td class="ps-4">${dateStr}</td>
+                    <td><span class="badge bg-secondary">${issue.period}</span></td>
+                    <td class="fw-medium">${issue.room}</td>
+                    <td>${issue.type}</td>
+                    <td class="text-danger">${issue.remark || '-'}</td>
+                </tr>
+            `;
+        });
+    }
 </script>
 </body>
 </html>
